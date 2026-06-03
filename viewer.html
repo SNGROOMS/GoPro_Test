@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core/index.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core/index.min.css"/>
+</head>
+
+<body style="margin:0">
+<div id="viewer" style="width:100vw;height:100vh"></div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const img = urlParams.get("img");
+
+const viewer = new PhotoSphereViewer.Viewer({
+  container: document.getElementById('viewer'),
+  panorama: img,
+  navbar: true
+});
+</script>
+</body>
+</html>
