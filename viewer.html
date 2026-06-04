@@ -21,18 +21,21 @@ html, body {
 }
 
 #controls {
-  position: absolute;
-  top: 10px;
+  position: fixed;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
+  z-index: 99999;
+  background: rgba(0,0,0,0.6);
+  padding: 10px;
+  border-radius: 8px;
 }
 
-#controls button {
-  padding: 8px 16px;
-  font-size: 16px;
-  margin: 0 5px;
+button {
+  padding: 8px 14px;
+  font-size: 14px;
   cursor: pointer;
+  margin: 0 5px;
 }
 
 #frameLabel {
@@ -44,6 +47,7 @@ html, body {
 </style>
 
 </head>
+
 <body>
 
 <div id="controls">
@@ -60,15 +64,11 @@ const params = new URLSearchParams(window.location.search);
 const img = params.get("img");
 
 if (!img) {
-  document.body.innerHTML =
-    "<h2 style='color:white'>No image provided</h2>";
+  document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
 } else {
 
   const match = img.match(/frame_(\d+)\.jpg/i);
-
-  let currentFrame = match
-    ? parseInt(match[1], 10)
-    : 1;
+  let currentFrame = match ? parseInt(match[1], 10) : 1;
 
   document.getElementById("frameLabel").innerText =
     "Frame " + currentFrame;
@@ -77,41 +77,33 @@ if (!img) {
     type: "equirectangular",
     panorama: img,
     autoLoad: true,
-    showControls: true
+    showControls: true,
+
+    // 🔥 THIS FIXES YOUR ORIENTATION
+    yaw: 180
   });
 
-  function buildFrameURL(frameNumber) {
-
-    const padded =
-      String(frameNumber).padStart(5, "0");
+  function buildURL(frameNumber) {
+    const padded = String(frameNumber).padStart(5, "0");
 
     return "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/frame_" +
       padded +
       ".jpg";
   }
 
-  window.nextFrame = function() {
-
+  window.nextFrame = function () {
     currentFrame++;
-
-    window.location.href =
-      buildFrameURL(currentFrame);
-
+    window.location.href = buildURL(currentFrame);
   };
 
-  window.prevFrame = function() {
-
+  window.prevFrame = function () {
     if (currentFrame > 1) {
       currentFrame--;
     }
-
-    window.location.href =
-      buildFrameURL(currentFrame);
-
+    window.location.href = buildURL(currentFrame);
   };
 
 }
-
 </script>
 
 </body>
