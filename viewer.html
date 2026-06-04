@@ -35,7 +35,6 @@ button {
   margin: 0 5px;
   padding: 8px 12px;
   cursor: pointer;
-  font-size: 14px;
 }
 
 #label {
@@ -60,43 +59,36 @@ button {
 
 const BASE = "https://SNGROOMS.github.io/GoPro_Test/";
 
-// ------------------------------
-// GET INITIAL IMAGE
-// ------------------------------
 const params = new URLSearchParams(window.location.search);
 let img = params.get("img");
 
 if (!img) {
   document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
-  throw new Error("Missing img parameter");
+  throw new Error("Missing image");
 }
 
-// extract current frame number
 let match = img.match(/frame_(\d+)\.jpg/i);
 let frame = match ? parseInt(match[1], 10) : 1;
 
-// ------------------------------
-// FRAME HELPERS
-// ------------------------------
 function pad(n) {
   return String(n).padStart(5, "0");
 }
 
-function frameName(n) {
-  return "frame_" + pad(n) + ".jpg";
-}
-
 function frameURL(n) {
-  return BASE + frameName(n);
+  return BASE + "frame_" + pad(n) + ".jpg";
 }
 
-function viewerURL(n) {
-  return BASE + "viewer.html?img=" + frameURL(n) + "&frame=" + n;
+function updateEBState(n) {
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("frame", n);
+  url.searchParams.set("img", frameURL(n));
+
+  // IMPORTANT: force EB refresh signal
+  window.location.href = url.toString();
 }
 
-// ------------------------------
-// LOAD VIEWER
-// ------------------------------
+// viewer
 let viewer = pannellum.viewer("panorama", {
   type: "equirectangular",
   panorama: img,
@@ -105,49 +97,16 @@ let viewer = pannellum.viewer("panorama", {
   yaw: 180
 });
 
-function updateLabel() {
-  document.getElementById("label").innerText = "Frame " + frame;
-}
+document.getElementById("label").innerText = "Frame " + frame;
 
-updateLabel();
-
-// ------------------------------
-// CORE NAVIGATION
-// ------------------------------
-function goTo(n) {
-
-  frame = n;
-
-  // update URL (important for ArcGIS sync if used later)
-  const url = new URL(window.location.href);
-  url.searchParams.set("img", frameURL(frame));
-  url.searchParams.set("frame", frame);
-  window.history.replaceState({}, "", url);
-
-  // reload viewer
-  viewer.destroy();
-
-  viewer = pannellum.viewer("panorama", {
-    type: "equirectangular",
-    panorama: frameURL(frame),
-    autoLoad: true,
-    showControls: true,
-    yaw: 180
-  });
-
-  updateLabel();
-}
-
-// ------------------------------
-// NAV BUTTONS (FIXED LOGIC)
-// ------------------------------
+// NAVIGATION
 function next() {
-  goTo(frame + 1);
+  updateEBState(frame + 1);
 }
 
 function prev() {
   if (frame <= 1) return;
-  goTo(frame - 1);
+  updateEBState(frame - 1);
 }
 
 </script>
