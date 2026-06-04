@@ -26,9 +26,9 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;
-  background: rgba(0,0,0,0.6);
-  padding: 10px;
-  border-radius: 8px;
+  background: rgba(0,0,0,0.65);
+  padding: 10px 12px;
+  border-radius: 10px;
 }
 
 button {
@@ -45,7 +45,6 @@ button {
   margin-left: 10px;
 }
 </style>
-
 </head>
 
 <body>
@@ -63,47 +62,75 @@ button {
 const params = new URLSearchParams(window.location.search);
 const img = params.get("img");
 
+// extract frame number from filename
+const match = img ? img.match(/frame_(\d+)\.jpg/i) : null;
+let currentFrame = match ? parseInt(match[1], 10) : 1;
+
+// update label
+function updateLabel() {
+  document.getElementById("frameLabel").innerText =
+    "Frame " + currentFrame;
+}
+
+// send message to Experience Builder (for map sync later)
+function sendToParent(frameName) {
+  window.parent.postMessage({
+    type: "FRAME_CHANGE",
+    frame: frameName
+  }, "*");
+}
+
+// build image URL
+function buildURL(frameNum) {
+  const padded = String(frameNum).padStart(5, "0");
+  const frameName = "frame_" + padded + ".jpg";
+
+  return {
+    viewer: "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/" + frameName,
+    frame: frameName
+  };
+}
+
 if (!img) {
   document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
 } else {
 
-  const match = img.match(/frame_(\d+)\.jpg/i);
-  let currentFrame = match ? parseInt(match[1], 10) : 1;
-
-  document.getElementById("frameLabel").innerText =
-    "Frame " + currentFrame;
+  updateLabel();
 
   pannellum.viewer("panorama", {
     type: "equirectangular",
     panorama: img,
     autoLoad: true,
     showControls: true,
-
-    // 🔥 THIS FIXES YOUR ORIENTATION
     yaw: 180
   });
 
-  function buildURL(frameNumber) {
-    const padded = String(frameNumber).padStart(5, "0");
-
-    return "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/frame_" +
-      padded +
-      ".jpg";
-  }
-
   window.nextFrame = function () {
+
     currentFrame++;
-    window.location.href = buildURL(currentFrame);
+
+    const data = buildURL(currentFrame);
+
+    sendToParent(data.frame);
+
+    window.location.href = data.viewer;
   };
 
   window.prevFrame = function () {
-    if (currentFrame > 1) {
-      currentFrame--;
-    }
-    window.location.href = buildURL(currentFrame);
+
+    if (currentFrame <= 1) return;
+
+    currentFrame--;
+
+    const data = buildURL(currentFrame);
+
+    sendToParent(data.frame);
+
+    window.location.href = data.viewer;
   };
 
 }
+
 </script>
 
 </body>
