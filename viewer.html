@@ -1,51 +1,49 @@
 <!DOCTYPE html>
-
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>360 Viewer</title>
+<meta charset="utf-8" />
+<title>360 Viewer</title>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: black;
-      overflow: hidden;
-    }
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  background: black;
+  overflow: hidden;
+}
 
-    #panorama {
-      width: 100%;
-      height: 100%;
-    }
+#panorama {
+  width: 100%;
+  height: 100%;
+}
 
-    #controls {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-    }
+#controls {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
 
-    button {
-      padding: 8px 16px;
-      margin: 0 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+#controls button {
+  padding: 8px 16px;
+  font-size: 16px;
+  margin: 0 5px;
+  cursor: pointer;
+}
 
-    #frameLabel {
-      color: white;
-      margin-left: 10px;
-      font-family: Arial, sans-serif;
-      font-weight: bold;
-    }
-  </style>
+#frameLabel {
+  color: white;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  margin-left: 10px;
+}
+</style>
 
 </head>
-
 <body>
 
 <div id="controls">
@@ -57,49 +55,63 @@
 <div id="panorama"></div>
 
 <script>
+
 const params = new URLSearchParams(window.location.search);
 const img = params.get("img");
 
 if (!img) {
-  document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
+  document.body.innerHTML =
+    "<h2 style='color:white'>No image provided</h2>";
 } else {
 
   const match = img.match(/frame_(\d+)\.jpg/i);
-  let currentFrame = match ? parseInt(match[1], 10) : 1;
+
+  let currentFrame = match
+    ? parseInt(match[1], 10)
+    : 1;
 
   document.getElementById("frameLabel").innerText =
     "Frame " + currentFrame;
 
-  pannellum.viewer('panorama', {
+  pannellum.viewer("panorama", {
     type: "equirectangular",
     panorama: img,
     autoLoad: true,
     showControls: true
   });
 
-  window.nextFrame = function() {
-    const next = currentFrame + 1;
-    const padded = String(next).padStart(5, '0');
+  function buildFrameURL(frameNumber) {
 
-    window.location.href =
-      "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/frame_" +
+    const padded =
+      String(frameNumber).padStart(5, "0");
+
+    return "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/frame_" +
       padded +
       ".jpg";
+  }
+
+  window.nextFrame = function() {
+
+    currentFrame++;
+
+    window.location.href =
+      buildFrameURL(currentFrame);
+
   };
 
   window.prevFrame = function() {
-    if (currentFrame <= 1) return;
 
-    const prev = currentFrame - 1;
-    const padded = String(prev).padStart(5, '0');
+    if (currentFrame > 1) {
+      currentFrame--;
+    }
 
     window.location.href =
-      "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/frame_" +
-      padded +
-      ".jpg";
+      buildFrameURL(currentFrame);
+
   };
 
 }
+
 </script>
 
 </body>
