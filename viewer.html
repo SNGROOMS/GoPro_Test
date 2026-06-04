@@ -22,26 +22,26 @@ html, body {
 
 #controls {
   position: fixed;
-  top: 12px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
-  background: rgba(0,0,0,0.65);
-  padding: 10px 14px;
+  background: rgba(0,0,0,0.6);
+  padding: 10px;
   border-radius: 10px;
+  z-index: 9999;
 }
 
 button {
-  padding: 8px 14px;
-  font-size: 14px;
-  cursor: pointer;
   margin: 0 5px;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
-#frameLabel {
+#label {
   color: white;
   font-family: Arial;
   font-weight: bold;
+  margin-left: 10px;
 }
 </style>
 </head>
@@ -49,64 +49,51 @@ button {
 <body>
 
 <div id="controls">
-  <button id="prevBtn">◀ Previous</button>
-  <button id="nextBtn">Next ▶</button>
-  <span id="frameLabel"></span>
+  <button onclick="prev()">◀ Prev</button>
+  <button onclick="next()">Next ▶</button>
+  <span id="label"></span>
 </div>
 
 <div id="panorama"></div>
 
 <script>
 
-// -------------------------
-// CONFIG
-// -------------------------
 const BASE = "https://SNGROOMS.github.io/GoPro_Test/";
-const VIEWER = BASE + "viewer.html";
 
-// -------------------------
-// GET CURRENT IMAGE
-// -------------------------
 const params = new URLSearchParams(window.location.search);
-const img = params.get("img");
+let img = params.get("img");
 
 if (!img) {
   document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
-  throw new Error("No image");
+  throw new Error("Missing image");
 }
 
-// -------------------------
-// EXTRACT FRAME NUMBER
-// -------------------------
-const match = img.match(/frame_(\d+)\.jpg/i);
-let currentFrame = match ? parseInt(match[1], 10) : 1;
+// extract frame number
+let match = img.match(/frame_(\d+)\.jpg/i);
+let frame = match ? parseInt(match[1], 10) : 1;
 
-// -------------------------
-// SAFE URL BUILDER
-// -------------------------
-function getFrameName(n) {
-  return "frame_" + String(n).padStart(5, "0") + ".jpg";
+function pad(n) {
+  return String(n).padStart(5, "0");
 }
 
-function getImageURL(frameNum) {
-  return BASE + getFrameName(frameNum);
+function frameName(n) {
+  return "frame_" + pad(n) + ".jpg";
 }
 
-function getViewerURL(frameNum) {
-  return VIEWER + "?img=" + getImageURL(frameNum);
+function imageURL(n) {
+  return BASE + frameName(n);
 }
 
-// -------------------------
-// UI
-// -------------------------
+function viewerURL(n) {
+  return BASE + "viewer.html?img=" + imageURL(n) + "&frame=" + n;
+}
+
+// update label
 function updateLabel() {
-  document.getElementById("frameLabel").innerText =
-    "Frame " + currentFrame;
+  document.getElementById("label").innerText = "Frame " + frame;
 }
 
-// -------------------------
-// INIT PANORAMA
-// -------------------------
+// load viewer
 pannellum.viewer("panorama", {
   type: "equirectangular",
   panorama: img,
@@ -117,18 +104,25 @@ pannellum.viewer("panorama", {
 
 updateLabel();
 
-// -------------------------
-// BUTTONS
-// -------------------------
-document.getElementById("nextBtn").onclick = function () {
-  currentFrame++;
-  window.location.href = getViewerURL(currentFrame);
+// IMPORTANT: URL SYNC (THIS IS YOUR BRIDGE TO EXPERIENCE BUILDER)
+function syncToEB(n) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("frame", n);
+  url.searchParams.set("img", imageURL(n));
+  window.history.replaceState({}, "", url);
+}
+
+window.next = function () {
+  frame++;
+  syncToEB(frame);
+  window.location.href = viewerURL(frame);
 };
 
-document.getElementById("prevBtn").onclick = function () {
-  if (currentFrame <= 1) return;
-  currentFrame--;
-  window.location.href = getViewerURL(currentFrame);
+window.prev = function () {
+  if (frame <= 1) return;
+  frame--;
+  syncToEB(frame);
+  window.location.href = viewerURL(frame);
 };
 
 </script>
