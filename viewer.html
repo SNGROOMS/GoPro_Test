@@ -35,6 +35,7 @@ button {
   margin: 0 5px;
   padding: 8px 12px;
   cursor: pointer;
+  font-size: 14px;
 }
 
 #label {
@@ -49,8 +50,8 @@ button {
 <body>
 
 <div id="controls">
-  <button onclick="prev()">◀ Prev</button>
-  <button onclick="next()">Next ▶</button>
+  <button onclick="prevFrame()">◀ Prev</button>
+  <button onclick="nextFrame()">Next ▶</button>
   <span id="label"></span>
 </div>
 
@@ -60,70 +61,101 @@ button {
 
 const BASE = "https://SNGROOMS.github.io/GoPro_Test/";
 
+// -----------------------------
+// GET INITIAL IMAGE FROM URL
+// -----------------------------
 const params = new URLSearchParams(window.location.search);
+
 let img = params.get("img");
 
+// fallback safety
 if (!img) {
   document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
-  throw new Error("Missing image");
+  throw new Error("Missing image parameter");
 }
 
-// extract frame number
+// extract frame number from filename
 let match = img.match(/frame_(\d+)\.jpg/i);
-let frame = match ? parseInt(match[1], 10) : 1;
+let frame = match ? parseInt(match[1], 10) : 10;
 
+// -----------------------------
+// HELPERS
+// -----------------------------
 function pad(n) {
   return String(n).padStart(5, "0");
 }
 
-function frameName(n) {
+function getFrameName(n) {
   return "frame_" + pad(n) + ".jpg";
 }
 
-function imageURL(n) {
-  return BASE + frameName(n);
+function getImageURL(n) {
+  return BASE + getFrameName(n);
 }
 
-function viewerURL(n) {
-  return BASE + "viewer.html?img=" + imageURL(n) + "&frame=" + n;
+function getViewerURL(n) {
+  return BASE + "viewer.html?img=" + getImageURL(n) + "&frame=" + n;
 }
 
-// update label
-function updateLabel() {
-  document.getElementById("label").innerText = "Frame " + frame;
-}
-
-// load viewer
-pannellum.viewer("panorama", {
+// -----------------------------
+// LOAD PANORAMA
+// -----------------------------
+let viewer = pannellum.viewer("panorama", {
   type: "equirectangular",
   panorama: img,
   autoLoad: true,
   showControls: true,
-  yaw: 180
+  yaw: 180   // your 180° correction
 });
+
+// -----------------------------
+// UI LABEL
+// -----------------------------
+function updateLabel() {
+  document.getElementById("label").innerText = "Frame " + frame;
+}
 
 updateLabel();
 
-// IMPORTANT: URL SYNC (THIS IS YOUR BRIDGE TO EXPERIENCE BUILDER)
-function syncToEB(n) {
+// -----------------------------
+// CORE NAVIGATION FUNCTION
+// -----------------------------
+function goToFrame(n) {
+
+  frame = n;
+
+  // update URL so ArcGIS / EB can track state
   const url = new URL(window.location.href);
-  url.searchParams.set("frame", n);
-  url.searchParams.set("img", imageURL(n));
+  url.searchParams.set("img", getImageURL(frame));
+  url.searchParams.set("frame", frame);
+
   window.history.replaceState({}, "", url);
+
+  // reload viewer content
+  viewer.destroy();
+
+  viewer = pannellum.viewer("panorama", {
+    type: "equirectangular",
+    panorama: getImageURL(frame),
+    autoLoad: true,
+    showControls: true,
+    yaw: 180
+  });
+
+  updateLabel();
 }
 
-window.next = function () {
-  frame++;
-  syncToEB(frame);
-  window.location.href = viewerURL(frame);
-};
+// -----------------------------
+// NEXT / PREV
+// -----------------------------
+function nextFrame() {
+  goToFrame(frame + 10);   // IMPORTANT: your step size is 10
+}
 
-window.prev = function () {
-  if (frame <= 1) return;
-  frame--;
-  syncToEB(frame);
-  window.location.href = viewerURL(frame);
-};
+function prevFrame() {
+  if (frame <= 10) return;
+  goToFrame(frame - 10);
+}
 
 </script>
 
