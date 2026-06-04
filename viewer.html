@@ -22,7 +22,7 @@ html, body {
 
 #controls {
   position: fixed;
-  top: 15px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -40,7 +40,7 @@ button {
 
 #frameLabel {
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   font-weight: bold;
 }
 </style>
@@ -49,8 +49,8 @@ button {
 <body>
 
 <div id="controls">
-  <button onclick="prevFrame()">◀ Previous</button>
-  <button onclick="nextFrame()">Next ▶</button>
+  <button id="prevBtn">◀ Previous</button>
+  <button id="nextBtn">Next ▶</button>
   <span id="frameLabel"></span>
 </div>
 
@@ -58,53 +58,78 @@ button {
 
 <script>
 
+// -------------------------
+// CONFIG
+// -------------------------
+const BASE = "https://SNGROOMS.github.io/GoPro_Test/";
+const VIEWER = BASE + "viewer.html";
+
+// -------------------------
+// GET CURRENT IMAGE
+// -------------------------
 const params = new URLSearchParams(window.location.search);
 const img = params.get("img");
 
 if (!img) {
   document.body.innerHTML = "<h2 style='color:white'>No image provided</h2>";
-} else {
-
-  // Extract frame number from filename like frame_00134.jpg
-  const match = img.match(/frame_(\d+)\.jpg/i);
-  let currentFrame = match ? parseInt(match[1], 10) : 1;
-
-  function updateLabel() {
-    document.getElementById("frameLabel").innerText =
-      "Frame " + currentFrame;
-  }
-
-  function buildURL(frameNum) {
-    const padded = String(frameNum).padStart(5, "0");
-    const frameName = "frame_" + padded + ".jpg";
-
-    return "https://SNGROOMS.github.io/GoPro_Test/viewer.html?img=https://SNGROOMS.github.io/GoPro_Test/" + frameName;
-  }
-
-  pannellum.viewer("panorama", {
-    type: "equirectangular",
-    panorama: img,
-    autoLoad: true,
-    showControls: true,
-
-    // FIX: correct orientation for all frames
-    yaw: 180
-  });
-
-  updateLabel();
-
-  window.nextFrame = function () {
-    currentFrame++;
-    window.location.href = buildURL(currentFrame);
-  };
-
-  window.prevFrame = function () {
-    if (currentFrame <= 1) return;
-    currentFrame--;
-    window.location.href = buildURL(currentFrame);
-  };
-
+  throw new Error("No image");
 }
+
+// -------------------------
+// EXTRACT FRAME NUMBER
+// -------------------------
+const match = img.match(/frame_(\d+)\.jpg/i);
+let currentFrame = match ? parseInt(match[1], 10) : 1;
+
+// -------------------------
+// SAFE URL BUILDER
+// -------------------------
+function getFrameName(n) {
+  return "frame_" + String(n).padStart(5, "0") + ".jpg";
+}
+
+function getImageURL(frameNum) {
+  return BASE + getFrameName(frameNum);
+}
+
+function getViewerURL(frameNum) {
+  return VIEWER + "?img=" + getImageURL(frameNum);
+}
+
+// -------------------------
+// UI
+// -------------------------
+function updateLabel() {
+  document.getElementById("frameLabel").innerText =
+    "Frame " + currentFrame;
+}
+
+// -------------------------
+// INIT PANORAMA
+// -------------------------
+pannellum.viewer("panorama", {
+  type: "equirectangular",
+  panorama: img,
+  autoLoad: true,
+  showControls: true,
+  yaw: 180
+});
+
+updateLabel();
+
+// -------------------------
+// BUTTONS
+// -------------------------
+document.getElementById("nextBtn").onclick = function () {
+  currentFrame++;
+  window.location.href = getViewerURL(currentFrame);
+};
+
+document.getElementById("prevBtn").onclick = function () {
+  if (currentFrame <= 1) return;
+  currentFrame--;
+  window.location.href = getViewerURL(currentFrame);
+};
 
 </script>
 
